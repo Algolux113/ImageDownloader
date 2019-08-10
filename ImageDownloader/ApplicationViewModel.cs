@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace ImageDownloader
@@ -50,24 +43,47 @@ namespace ImageDownloader
             }
         }
 
+        private double progressValue;
+
+        public double ProgressValue
+        {
+            get { return progressValue; }
+            set
+            {
+                progressValue = value;
+                OnPropertyChanged("ProgressValue");
+            }
+        }
+
+        private double progressTotal;
+
+        public double ProgressTotal
+        {
+            get { return progressTotal; }
+            set
+            {
+                progressTotal = value;
+                OnPropertyChanged("ProgressTotal");
+            }
+        }
+
+        private bool startAllEnable;
+
+        public bool StartAllEnable
+        {
+            get { return startAllEnable; }
+            set
+            {
+                startAllEnable = value;
+                OnPropertyChanged("StartAllEnable");
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void OnPropertyChanged([CallerMemberName]string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
-        }
-
-        private RelayCommand stoptAllCommand;
-
-        public RelayCommand StopAllCommand
-        {
-            get
-            {
-                return stoptAllCommand ?? (stoptAllCommand = new RelayCommand(obj =>
-                {
-                    MessageBox.Show("Stop");
-                }));
-            }
         }
 
         private RelayCommand starttAllCommand;
@@ -80,21 +96,81 @@ namespace ImageDownloader
                 {
                     try
                     {
-                        await leftImageDownloader.DowloadFileAsync();
+                        await LeftImageDownloader.DowloadFileAsync();
+
+                        await CenterImageDownloader.DowloadFileAsync();
+
+                        await RightImageDownloader.DowloadFileAsync();
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
+
+                    StartAllEnable = true;
                 }));
+            }
+        }
+
+        private void RightImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ProgressValue")
+            {
+                StartAllEnable = false;
+                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
+            }
+
+            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            {
+                StartAllEnable = true;
+            }
+        }
+
+        private void CenterImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ProgressValue")
+            {
+                StartAllEnable = false;
+                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
+            }
+
+            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            {
+                StartAllEnable = true;
+            }
+        }
+
+        private void LeftImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "ProgressValue")
+            {
+                StartAllEnable = false;
+                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
+            }
+
+            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            {
+                StartAllEnable = true;
             }
         }
 
         public ApplicationViewModel()
         {
             leftImageDownloader = new ImageDownloaderViewModel();
+
+            LeftImageDownloader.PropertyChanged += LeftImageDownloader_PropertyChanged;
+
             rightImageDownloader = new ImageDownloaderViewModel();
+
+            RightImageDownloader.PropertyChanged += RightImageDownloader_PropertyChanged;
+
             centerImageDownloader = new ImageDownloaderViewModel();
+
+            CenterImageDownloader.PropertyChanged += CenterImageDownloader_PropertyChanged;
+
+            ProgressTotal = 100;
+
+            StartAllEnable = true;
         }
     }
 }

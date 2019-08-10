@@ -11,7 +11,7 @@ namespace ImageDownloader
 {
     class ImageDownloaderViewModel : INotifyPropertyChanged
     {
-        private WebClient webClient;
+        public WebClient webClient;
 
         private readonly string imageDownloadPath;
 
@@ -41,6 +41,30 @@ namespace ImageDownloader
             }
         }
 
+        private bool startEndable;
+
+        public bool StartEnable
+        {
+            get { return startEndable; }
+            set
+            {
+                startEndable = value;
+                OnPropertyChanged("StartEnable");
+            }
+        }
+
+        private bool stopEnable;
+
+        public bool StopEnable
+        {
+            get { return stopEnable; }
+            set
+            {
+                stopEnable = value;
+                OnPropertyChanged("StopEnable");
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void OnPropertyChanged([CallerMemberName]string prop = "")
@@ -56,6 +80,8 @@ namespace ImageDownloader
             {
                 return startCommand ?? (startCommand = new RelayCommand(async obj =>
                 {
+                    StartEnable = false; StopEnable = true;
+
                     try
                     {
                         await DowloadFileAsync();
@@ -64,6 +90,8 @@ namespace ImageDownloader
                     {
                         MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
+
+                    StartEnable = true; StopEnable = false;
                 }));
             }
         }
@@ -124,19 +152,18 @@ namespace ImageDownloader
             }
         }
 
-        private void WebClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            ProgressValue = e.ProgressPercentage;
-        }
-
         private void WebClient_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
             ProgressValue = 0;
+            StartEnable = true;
+            StopEnable = false;
+        }
 
-            if (!e.Cancelled)
-            {
-                MessageBox.Show("Загрузка завершена.", "Уведомление", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+        private void WebClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        {
+            ProgressValue = e.ProgressPercentage;
+            StartEnable = false;
+            StopEnable = true;
         }
 
         public ImageDownloaderViewModel()
@@ -146,9 +173,9 @@ namespace ImageDownloader
             imageDownloadPath = ConfigurationManager.AppSettings.Get("ImageDownloadPath");
             imagedefaultPath = "img/no_image.png";
 
-            imageViewModel = new ImageViewModel(new Image { Path = imagedefaultPath, Url = "azaza"});
+            imageViewModel = new ImageViewModel(new Image { Path = imagedefaultPath, Url = ""});
 
-            ProgressValue = 0;
+            startEndable = true; stopEnable = false;
         }
     }
 }

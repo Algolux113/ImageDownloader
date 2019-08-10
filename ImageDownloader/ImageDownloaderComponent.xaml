@@ -30,8 +30,8 @@
                     <Label Grid.Row="0" Grid.Column="0" Target="{Binding ElementName=ImageViewModel}" Content="Url:"/>
                     <TextBox Grid.Row="0" Grid.Column="1" x:Name="ImageViewModel" Text="{Binding ImageViewModel.Url}" VerticalAlignment="Center"/>
                 </Grid>
-                <Button Content="Запустить" Command="{Binding StartCommand}"/>
-                <Button Content="Остановить" Command="{Binding StopCommand}" Margin="0, 5, 0, 0"/>
+                <Button Content="Запустить" Command="{Binding StartCommand}" IsEnabled="{Binding StartEnable}"/>
+                <Button Content="Остановить" Command="{Binding StopCommand}" IsEnabled="{Binding StopEnable}" Margin="0, 5, 0, 0"/>
             </StackPanel>
         </GroupBox>
     </Grid>
