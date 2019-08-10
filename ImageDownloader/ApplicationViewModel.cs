@@ -94,6 +94,15 @@ namespace ImageDownloader
             {
                 return starttAllCommand ?? (starttAllCommand = new RelayCommand(async obj =>
                 {
+                    LeftImageDownloader.StartEnable = false;
+                    LeftImageDownloader.StopEnable = false;
+
+                    CenterImageDownloader.StartEnable = false;
+                    CenterImageDownloader.StopEnable = false;
+
+                    RightImageDownloader.StartEnable = false;
+                    RightImageDownloader.StopEnable = false;
+
                     try
                     {
                         await LeftImageDownloader.DowloadFileAsync();
