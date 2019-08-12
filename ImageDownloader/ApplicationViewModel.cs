@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace ImageDownloader
@@ -94,29 +95,19 @@ namespace ImageDownloader
             {
                 return starttAllCommand ?? (starttAllCommand = new RelayCommand(async obj =>
                 {
-                    LeftImageDownloader.StartEnable = false;
-                    LeftImageDownloader.StopEnable = false;
-
-                    CenterImageDownloader.StartEnable = false;
-                    CenterImageDownloader.StopEnable = false;
-
-                    RightImageDownloader.StartEnable = false;
-                    RightImageDownloader.StopEnable = false;
+                    ProgressValue = 0; ProgressTotal = 1;
 
                     try
                     {
-                        await LeftImageDownloader.DowloadFileAsync();
-
-                        await CenterImageDownloader.DowloadFileAsync();
-
-                        await RightImageDownloader.DowloadFileAsync();
+                        Task leftImageDownloadTask = Task.Run(() => LeftImageDownloader.DowloadFileAsync());
+                        Task centerImageDownloadTask = Task.Run(() => CenterImageDownloader.DowloadFileAsync());
+                        Task rightImageDownloadTask = Task.Run(() => RightImageDownloader.DowloadFileAsync());
+                        await Task.WhenAll(leftImageDownloadTask, centerImageDownloadTask, rightImageDownloadTask);
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-
-                    StartAllEnable = true;
                 }));
             }
         }
@@ -125,13 +116,21 @@ namespace ImageDownloader
         {
             if (e.PropertyName == "ProgressValue")
             {
-                StartAllEnable = false;
                 ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
             }
 
-            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            if (e.PropertyName == "ProgressTotal")
+            {
+                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
+            }
+
+            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
             {
                 StartAllEnable = true;
+            }
+            else
+            {
+                StartAllEnable = false;
             }
         }
 
@@ -139,13 +138,21 @@ namespace ImageDownloader
         {
             if (e.PropertyName == "ProgressValue")
             {
-                StartAllEnable = false;
                 ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
             }
 
-            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            if (e.PropertyName == "ProgressTotal")
+            {
+                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
+            }
+
+            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
             {
                 StartAllEnable = true;
+            }
+            else
+            {
+                StartAllEnable = false;
             }
         }
 
@@ -153,13 +160,21 @@ namespace ImageDownloader
         {
             if (e.PropertyName == "ProgressValue")
             {
-                StartAllEnable = false;
                 ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
             }
 
-            if (LeftImageDownloader.ProgressValue == 0 && RightImageDownloader.ProgressValue == 0 && CenterImageDownloader.ProgressValue == 0)
+            if (e.PropertyName == "ProgressTotal")
+            {
+                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
+            }
+
+            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
             {
                 StartAllEnable = true;
+            }
+            else
+            {
+                StartAllEnable = false;
             }
         }
 
@@ -177,9 +192,7 @@ namespace ImageDownloader
 
             CenterImageDownloader.PropertyChanged += CenterImageDownloader_PropertyChanged;
 
-            ProgressTotal = 100;
-
-            StartAllEnable = true;
+            StartAllEnable = true; ProgressTotal = 0; ProgressValue = 0;
         }
     }
 }

@@ -13,9 +13,11 @@ namespace ImageDownloader
     {
         public WebClient webClient;
 
-        private readonly string imageDownloadPath;
+        private readonly string imageDownloadDirectory;
 
         private readonly string imagedefaultPath;
+
+        private string imageDownloadPath;
 
         private ImageViewModel imageViewModel;
 
@@ -38,6 +40,18 @@ namespace ImageDownloader
             {
                 progressValue = value;
                 OnPropertyChanged("ProgressValue");
+            }
+        }
+
+        private double progressTotal;
+
+        public double ProgressTotal
+        {
+            get { return progressTotal; }
+            set
+            {
+                progressTotal = value;
+                OnPropertyChanged("ProgressTotal");
             }
         }
 
@@ -80,8 +94,6 @@ namespace ImageDownloader
             {
                 return startCommand ?? (startCommand = new RelayCommand(async obj =>
                 {
-                    StartEnable = false; StopEnable = true;
-
                     try
                     {
                         await DowloadFileAsync();
@@ -90,8 +102,6 @@ namespace ImageDownloader
                     {
                         MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-
-                    StartEnable = true; StopEnable = false;
                 }));
             }
         }
@@ -111,71 +121,75 @@ namespace ImageDownloader
 
         public async Task DowloadFileAsync()
         {
-            Uri uri = new Uri(ImageViewModel.Url);
-
-            if (!Directory.Exists(imageDownloadPath))
+            if (string.IsNullOrEmpty(ImageViewModel.Url))
             {
-                Directory.CreateDirectory(imageDownloadPath);
+                return;
             }
 
-            var fileName = $"{imageDownloadPath}/{Guid.NewGuid()}.{ Path.GetExtension(uri.AbsolutePath)}";
+            Uri uri = new Uri(ImageViewModel.Url);
 
-            ImageViewModel.Path = imagedefaultPath;
-
-            if (File.Exists(fileName))
+            if (!Directory.Exists(imageDownloadDirectory))
             {
-                File.Delete(fileName);
+                Directory.CreateDirectory(imageDownloadDirectory);
+            }
+
+            imageDownloadPath = $"{imageDownloadDirectory}/{Guid.NewGuid()}.{ Path.GetExtension(uri.AbsolutePath)}";
+
+            if (File.Exists(imageDownloadPath))
+            {
+                File.Delete(imageDownloadPath);
             }
 
             try
             {
                 using (webClient = new WebClient())
                 {
+                    ProgressValue = 0; ProgressTotal = 1;
                     webClient.DownloadProgressChanged += WebClient_DownloadProgressChanged;
                     webClient.DownloadFileCompleted += WebClient_DownloadFileCompleted;
-
-                    await webClient.DownloadFileTaskAsync(uri, fileName);
+                    await webClient.DownloadFileTaskAsync(uri, imageDownloadPath);
                 }
-
-                ImageViewModel.Path = fileName;
             }
             catch (Exception ex)
             {
-                ImageViewModel.Path = imagedefaultPath;
-
-                if (File.Exists(fileName))
+                if (File.Exists(imageDownloadPath))
                 {
-                    File.Delete(fileName);
+                    File.Delete(imageDownloadPath);
                 }
+
+                imageDownloadPath = imagedefaultPath;
 
                 MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            ImageViewModel.Path = imageDownloadPath;
         }
 
         private void WebClient_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
-            ProgressValue = 0;
-            StartEnable = true;
-            StopEnable = false;
+            StartEnable = true; StopEnable = false;
         }
 
         private void WebClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            ProgressValue = e.ProgressPercentage;
-            StartEnable = false;
-            StopEnable = true;
+            ProgressValue = e.BytesReceived;
+            ProgressTotal = e.TotalBytesToReceive;
+            StartEnable = false; StopEnable = true;
         }
 
         public ImageDownloaderViewModel()
         {
             webClient = new WebClient();
 
-            imageDownloadPath = ConfigurationManager.AppSettings.Get("ImageDownloadPath");
+            imageDownloadDirectory = ConfigurationManager.AppSettings.Get("ImageDownloadPath");
             imagedefaultPath = "img/no_image.png";
+            imageDownloadPath = "";
 
             imageViewModel = new ImageViewModel(new Image { Path = imagedefaultPath, Url = ""});
 
             startEndable = true; stopEnable = false;
+
+            ProgressTotal = 1; ProgressValue = 0;
         }
     }
 }
