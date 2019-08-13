@@ -31,6 +31,20 @@ namespace ImageDownloader
             }
         }
 
+        private bool isRunning;
+
+        public bool IsRunning
+        {
+            get { return isRunning; }
+            set
+            {
+                isRunning = value;
+                OnPropertyChanged("IsRunning");
+                OnPropertyChanged("StartEnable");
+                OnPropertyChanged("StopEnable");
+            }
+        }
+
         private double progressValue;
 
         public double ProgressValue
@@ -43,40 +57,14 @@ namespace ImageDownloader
             }
         }
 
-        private double progressTotal;
-
-        public double ProgressTotal
-        {
-            get { return progressTotal; }
-            set
-            {
-                progressTotal = value;
-                OnPropertyChanged("ProgressTotal");
-            }
-        }
-
-        private bool startEndable;
-
         public bool StartEnable
         {
-            get { return startEndable; }
-            set
-            {
-                startEndable = value;
-                OnPropertyChanged("StartEnable");
-            }
+            get { return isRunning ? false : true; }
         }
-
-        private bool stopEnable;
 
         public bool StopEnable
         {
-            get { return stopEnable; }
-            set
-            {
-                stopEnable = value;
-                OnPropertyChanged("StopEnable");
-            }
+            get { return isRunning ? true : false; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -144,9 +132,11 @@ namespace ImageDownloader
             {
                 using (webClient = new WebClient())
                 {
-                    ProgressValue = 0; ProgressTotal = 1;
+                    IsRunning = true; ProgressValue = 0;
+
                     webClient.DownloadProgressChanged += WebClient_DownloadProgressChanged;
                     webClient.DownloadFileCompleted += WebClient_DownloadFileCompleted;
+
                     await webClient.DownloadFileTaskAsync(uri, imageDownloadPath);
                 }
             }
@@ -167,14 +157,12 @@ namespace ImageDownloader
 
         private void WebClient_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
-            StartEnable = true; StopEnable = false;
+            IsRunning = false;
         }
 
         private void WebClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            ProgressValue = e.BytesReceived;
-            ProgressTotal = e.TotalBytesToReceive;
-            StartEnable = false; StopEnable = true;
+            ProgressValue = e.ProgressPercentage;
         }
 
         public ImageDownloaderViewModel()
@@ -187,9 +175,7 @@ namespace ImageDownloader
 
             imageViewModel = new ImageViewModel(new Image { Path = imagedefaultPath, Url = ""});
 
-            startEndable = true; stopEnable = false;
-
-            ProgressTotal = 1; ProgressValue = 0;
+            isRunning = false;
         }
     }
 }

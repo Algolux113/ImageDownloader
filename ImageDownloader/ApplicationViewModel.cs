@@ -44,40 +44,35 @@ namespace ImageDownloader
             }
         }
 
-        private double progressValue;
-
         public double ProgressValue
         {
-            get { return progressValue; }
-            set
+            get
             {
-                progressValue = value;
-                OnPropertyChanged("ProgressValue");
+                double progress = 0;
+
+                progress += leftImageDownloader.IsRunning ? leftImageDownloader.ProgressValue : 0;
+                progress += centerImageDownloader.IsRunning ? centerImageDownloader.ProgressValue : 0;
+                progress += rightImageDownloader.IsRunning ? rightImageDownloader.ProgressValue : 0;
+
+                return progress;
             }
         }
-
-        private double progressTotal;
 
         public double ProgressTotal
         {
-            get { return progressTotal; }
-            set
+            get
             {
-                progressTotal = value;
-                OnPropertyChanged("ProgressTotal");
+                double total = 0;
+                total += leftImageDownloader.IsRunning ? 100 : 0;
+                total += rightImageDownloader.IsRunning ? 100 : 0;
+                total += centerImageDownloader.IsRunning ? 100 : 0;
+                return total;
             }
         }
 
-        private bool startAllEnable;
-
         public bool StartAllEnable
         {
-            get { return startAllEnable; }
-            set
-            {
-                startAllEnable = value;
-                OnPropertyChanged("StartAllEnable");
-            }
+            get { return !leftImageDownloader.IsRunning && !centerImageDownloader.IsRunning && !rightImageDownloader.IsRunning; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -95,13 +90,12 @@ namespace ImageDownloader
             {
                 return starttAllCommand ?? (starttAllCommand = new RelayCommand(async obj =>
                 {
-                    ProgressValue = 0; ProgressTotal = 1;
-
                     try
                     {
                         Task leftImageDownloadTask = Task.Run(() => LeftImageDownloader.DowloadFileAsync());
                         Task centerImageDownloadTask = Task.Run(() => CenterImageDownloader.DowloadFileAsync());
                         Task rightImageDownloadTask = Task.Run(() => RightImageDownloader.DowloadFileAsync());
+
                         await Task.WhenAll(leftImageDownloadTask, centerImageDownloadTask, rightImageDownloadTask);
                     }
                     catch (Exception ex)
@@ -112,87 +106,58 @@ namespace ImageDownloader
             }
         }
 
-        private void RightImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        public ApplicationViewModel()
         {
-            if (e.PropertyName == "ProgressValue")
-            {
-                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
-            }
+            leftImageDownloader = new ImageDownloaderViewModel();
+            leftImageDownloader.PropertyChanged += LeftImageDownloader_PropertyChanged;
 
-            if (e.PropertyName == "ProgressTotal")
-            {
-                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
-            }
+            rightImageDownloader = new ImageDownloaderViewModel();
+            rightImageDownloader.PropertyChanged += RightImageDownloader_PropertyChanged;
 
-            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
-            {
-                StartAllEnable = true;
-            }
-            else
-            {
-                StartAllEnable = false;
-            }
+            centerImageDownloader = new ImageDownloaderViewModel();
+            centerImageDownloader.PropertyChanged += CenterImageDownloader_PropertyChanged;
         }
 
         private void CenterImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == "IsRunning")
+            {
+                OnPropertyChanged("StartAllEnable");
+                OnPropertyChanged("ProgressTotal");
+            }
+
             if (e.PropertyName == "ProgressValue")
             {
-                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
+                OnPropertyChanged("ProgressValue");
+            }
+        }
+
+        private void RightImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "IsRunning")
+            {
+                OnPropertyChanged("StartAllEnable");
+                OnPropertyChanged("ProgressTotal");
             }
 
-            if (e.PropertyName == "ProgressTotal")
+            if (e.PropertyName == "ProgressValue")
             {
-                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
-            }
-
-            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
-            {
-                StartAllEnable = true;
-            }
-            else
-            {
-                StartAllEnable = false;
+                OnPropertyChanged("ProgressValue");
             }
         }
 
         private void LeftImageDownloader_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == "IsRunning")
+            {
+                OnPropertyChanged("StartAllEnable");
+                OnPropertyChanged("ProgressTotal");
+            }
+
             if (e.PropertyName == "ProgressValue")
             {
-                ProgressValue = LeftImageDownloader.ProgressValue + CenterImageDownloader.ProgressValue + RightImageDownloader.ProgressValue;
+                OnPropertyChanged("ProgressValue");
             }
-
-            if (e.PropertyName == "ProgressTotal")
-            {
-                ProgressTotal = LeftImageDownloader.ProgressTotal + CenterImageDownloader.ProgressTotal + RightImageDownloader.ProgressTotal;
-            }
-
-            if (LeftImageDownloader.StartEnable == true && RightImageDownloader.StartEnable == true && CenterImageDownloader.StartEnable == true)
-            {
-                StartAllEnable = true;
-            }
-            else
-            {
-                StartAllEnable = false;
-            }
-        }
-
-        public ApplicationViewModel()
-        {
-            leftImageDownloader = new ImageDownloaderViewModel();
-
-            LeftImageDownloader.PropertyChanged += LeftImageDownloader_PropertyChanged;
-
-            rightImageDownloader = new ImageDownloaderViewModel();
-
-            RightImageDownloader.PropertyChanged += RightImageDownloader_PropertyChanged;
-
-            centerImageDownloader = new ImageDownloaderViewModel();
-
-            CenterImageDownloader.PropertyChanged += CenterImageDownloader_PropertyChanged;
-
-            StartAllEnable = true; ProgressTotal = 0; ProgressValue = 0;
         }
     }
 }

@@ -34,7 +34,7 @@
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Target="{Binding ElementName=DownloadProgress}" Content="Прогресс:"/>
                 <ProgressBar Grid.Column="1" x:Name="DownloadProgress" Height="20" 
-                             Minimum="0" Maximum="{Binding ProgressTotal}" Value="{Binding ProgressValue}"/>
+                             Minimum="0" Maximum="{Binding ProgressTotal}" Value="{Binding ProgressValue, Mode=OneWay}"/>
                 <Button Grid.Column="2" Content="Запустить все" Command="{Binding StartAllCommand}" IsEnabled="{Binding StartAllEnable}" Margin="5"/>
             </Grid>
         </GroupBox>
